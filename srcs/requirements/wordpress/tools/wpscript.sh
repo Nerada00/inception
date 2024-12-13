@@ -26,7 +26,6 @@ if [ ! -f /var/www/wordpress/wp-config.php ];then
 	wp cache flush --allow-root
 	wp plugin install contact-form-7 --activate --allow-root
 	sleep 5
-	sed -i "41 i define( 'WP_REDIS_HOST', 'redis' );\ndefine( 'WP_REDIS_PORT', '6379' );\n" wp-config.php
 fi
 
 if [ ! -d /run/php ]; then

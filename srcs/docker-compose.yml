@@ -77,20 +77,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis
-    container_name: redis_C
-    build: ./requirements/bonus/redis
-    networks:
-      - inception
-    restart: on-failure
-    volumes:
-      - wordpress:/var/www/wordpress
-    ports:
-      - "6379:6379"
-    depends_on:
-      - nginx
-
 volumes:
   mariadb:
     driver: local
