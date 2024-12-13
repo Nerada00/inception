@@ -1,0 +1,110 @@
+version: '3.7'
+
+services:
+  nginx:
+    image: nginx
+    container_name: nginx_C
+    build: ./requirements/nginx
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress:/var/www/wordpress
+    networks:
+      - inception
+    env_file: ".env"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
+    depends_on:
+      - wordpress
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-kfsSL", "https://localhost:443/status || exit 1"]
+      interval: 5s
+      timeout: 1s
+      retries: 10
+
+  mariadb:
+    image: mariadb
+    container_name: mariadb_C
+    build: ./requirements/mariadb
+    volumes:
+      - mariadb:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - inception
+    env_file: ".env"
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ADMIN_PASSWORD=${MYSQL_ADMIN_PASSWORD}
+      - MYSQL_ADMIN_USER=${MYSQL_ADMIN_USER}
+      - MYSQL_USER_LOGIN=${MYSQL_USER_LOGIN}
+      - MYSQL_USER_PASSWORD=${MYSQL_USER_PASSWORD}
+    restart: on-failure
+    healthcheck:
+      test: mysqladmin ping --host=localhost -p${MYSQL_ADMIN_PASSWORD}
+      interval: 5s
+      timeout: 1s
+      retries: 20
+
+  wordpress:
+    image: wordpress
+    container_name: wordpress_C
+    build: ./requirements/wordpress
+    volumes:
+      - wordpress:/var/www/wordpress
+    ports:
+      - "9000:9000"
+    networks:
+      - inception
+    restart: on-failure
+    depends_on:
+      - mariadb
+    env_file: ".env"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - SITE_TITLE=${SITE_TITLE}
+      - MYSQL_ADMIN_USER=${MYSQL_ADMIN_USER}
+      - MYSQL_ADMIN_EMAIL=${MYSQL_ADMIN_EMAIL}
+      - MYSQL_ADMIN_PASSWORD=${MYSQL_ADMIN_PASSWORD}
+      - MYSQL_USER_LOGIN=${MYSQL_USER_LOGIN}
+      - MYSQL_USER_EMAIL=${MYSQL_USER_EMAIL}
+      - MYSQL_USER_PASSWORD=${MYSQL_USER_PASSWORD}
+    healthcheck:
+      test: 'curl -kfsSL https://${DOMAIN_NAME}/wp-admin/login.php || exit 1'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis
+    container_name: redis_C
+    build: ./requirements/bonus/redis
+    networks:
+      - inception
+    restart: on-failure
+    volumes:
+      - wordpress:/var/www/wordpress
+    ports:
+      - "6379:6379"
+    depends_on:
+      - nginx
+
+volumes:
+  mariadb:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: 'home/abdmessa/data/mariadb'
+  wordpress:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: 'home/abdmessa/data/wordpress'
+
+networks:
+  inception:
+    driver : bridge
