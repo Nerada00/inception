@@ -1,81 +1,66 @@
-version: '3.7'
-
 services:
-  nginx:
-    image: nginx
-    container_name: nginx_C
-    build: ./requirements/nginx
-    ports:
-      - "443:443"
-    volumes:
-      - wordpress:/var/www/wordpress
-    networks:
-      - inception
-    env_file: ".env"
-    environment:
-      - DOMAIN_NAME=${DOMAIN_NAME}
-    depends_on:
-      - wordpress
-    restart: on-failure
-    healthcheck:
-      test: ["CMD", "curl", "-kfsSL", "https://localhost:443/status || exit 1"]
-      interval: 5s
-      timeout: 1s
-      retries: 10
 
   mariadb:
     image: mariadb
-    container_name: mariadb_C
-    build: ./requirements/mariadb
+    container_name: mariadb
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
     volumes:
       - mariadb:/var/lib/mysql
-    ports:
-      - "3306:3306"
+    expose:
+      - "3306"
     networks:
       - inception
-    env_file: ".env"
-    environment:
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_ADMIN_PASSWORD=${MYSQL_ADMIN_PASSWORD}
-      - MYSQL_ADMIN_USER=${MYSQL_ADMIN_USER}
-      - MYSQL_USER_LOGIN=${MYSQL_USER_LOGIN}
-      - MYSQL_USER_PASSWORD=${MYSQL_USER_PASSWORD}
-    restart: on-failure
+    restart: unless-stopped
+    env_file: .env
     healthcheck:
-      test: mysqladmin ping --host=localhost -p${MYSQL_ADMIN_PASSWORD}
+      test: mysqladmin ping --host=localhost -p${SQL_ROOT_PASSWORD}
       interval: 5s
       timeout: 1s
       retries: 20
+      start_period: 5s
 
   wordpress:
     image: wordpress
-    container_name: wordpress_C
-    build: ./requirements/wordpress
+    container_name: wordpress
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
     volumes:
       - wordpress:/var/www/wordpress
-    ports:
-      - "9000:9000"
+    expose:
+      - "9000"
     networks:
       - inception
-    restart: on-failure
+    restart: unless-stopped
+    env_file: .env
     depends_on:
-      - mariadb
-    env_file: ".env"
-    environment:
-      - DOMAIN_NAME=${DOMAIN_NAME}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - SITE_TITLE=${SITE_TITLE}
-      - MYSQL_ADMIN_USER=${MYSQL_ADMIN_USER}
-      - MYSQL_ADMIN_EMAIL=${MYSQL_ADMIN_EMAIL}
-      - MYSQL_ADMIN_PASSWORD=${MYSQL_ADMIN_PASSWORD}
-      - MYSQL_USER_LOGIN=${MYSQL_USER_LOGIN}
-      - MYSQL_USER_EMAIL=${MYSQL_USER_EMAIL}
-      - MYSQL_USER_PASSWORD=${MYSQL_USER_PASSWORD}
+      mariadb:
+        condition: service_healthy    
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile	
+    volumes:
+      - wordpress:/var/www/wordpress
+    depends_on:
+      - wordpress
+    ports:
+      - "443:443"
+    networks:
+      - inception
+    restart: unless-stopped
+    env_file: .env
     healthcheck:
-      test: 'curl -kfsSL https://${DOMAIN_NAME}/wp-admin/login.php || exit 1'
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: 'curl -kfsSL https://localhost:443/status'
+      interval: 5s
+      timeout: 1s
+      retries: 10
+      start_period: 5s
 
 volumes:
   mariadb:
@@ -83,14 +68,14 @@ volumes:
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: 'home/abdmessa/data/mariadb'
+      device: '/home/abdmessa/data/mariadb'
   wordpress:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: 'home/abdmessa/data/wordpress'
+      device: '/home/abdmessa/data/wordpress'
 
 networks:
   inception:
-    driver : bridge
+    name: inception

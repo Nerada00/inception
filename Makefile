@@ -1,35 +1,23 @@
-all : build
+all: 
+	mkdir -p /home/abdmessa/data/mariadb
+	mkdir -p /home/abdmessa/data/wordpress
+	docker compose -f ./srcs/docker-compose.yml build
+	docker compose -f ./srcs/docker-compose.yml up -d
 
-build :
-	@mkdir -p /home/abdmessa/data
-	@mkdir -p /home/abdmessa/data/mariadb
-	@mkdir -p /home/abdmessa/data/wordpress
-	@sudo docker-compose --env-file ./srcs/.env -f ./srcs/docker-compose.yml up -d --build
+logs:
+	docker logs wordpress
+	docker logs mariadb
+	docker logs nginx
 
-mariadb :
-	@sudo docker-compose --env-file ./srcs/.env -f ./srcs/docker-compose.yml up --build mariadb
+clean:
+	docker container stop nginx mariadb wordpress
+	docker network rm inception
 
-wordpress :
-	@sudo docker-compose --env-file ./srcs/.env -f ./srcs/docker-compose.yml build wordpress
+fclean: clean
+	@sudo rm -rf /home/abdmessa/data/mariadb/*
+	@sudo rm -rf /home/abdmessa/data/wordpress/*
+	@docker system prune -af
 
-nginx :
-	@sudo docker-compose --env-file ./srcs/.env -f ./srcs/docker-compose.yml build nginx
+re: fclean all
 
-logs :
-	@sudo docker-compose --env-file ./srcs/.env -f srcs/docker-compose.yml logs mariadb
-	@sudo docker-compose --env-file ./srcs/.env -f srcs/docker-compose.yml logs wordpress
-	@sudo docker-compose --env-file ./srcs/.env -f srcs/docker-compose.yml logs nginx
-
-down :
-	@sudo docker-compose --env-file ./srcs/.env -f ./srcs/docker-compose.yml down
-
-clean : down
-	@sudo docker system prune -af
-	@sudo rm -rf /home/abdmessa/data
-
-fclean : clean
-	@sudo docker volume rm srcs_mariadb
-	@sudo docker volume rm srcs_wordpress
-re : clean all
-
-.PHONY : all build up logs down clean
+.Phony: all logs clean fclean

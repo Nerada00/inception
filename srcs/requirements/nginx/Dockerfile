@@ -1,18 +1,20 @@
-FROM	debian:bullseye
+FROM debian:bullseye
 
-ENV	DEBIAN_FRONTEND=noninteractive
+# install NGINX and other dependencies
+RUN apt-get update -y 
+RUN apt-get install -y nginx
+RUN apt-get install -y vim
+RUN apt-get install -y curl
+RUN mkdir -p /etc/nginx/ssl
+RUN apt-get install -y openssl
 
-RUN	apt-get update -y && apt-get upgrade -y
-RUN	apt-get install -y nginx openssl
-RUN	mkdir -p /etc/nginx/ssl
+# 1)create a directory to store certificates and keys 2)generate the keys
+RUN openssl req -x509 -nodes -out /etc/nginx/ssl/inception.crt -keyout /etc/nginx/ssl/inception.key -subj "/C=FR/ST=IDF/L=Paris/O=42/OU=42/CN=abdmessa.42.fr/UID=abdmessa"
 
-RUN	openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-	-out /etc/nginx/ssl/inception.crt \
-	-keyout /etc/nginx/ssl/inception.key \
-	-subj "/C=FR/ST=IDF/L=Paris/O=42/OU=42Paris/CN=.42.fr/UID=abdmessa"
-
-COPY	conf/nginx.conf /etc/nginx/nginx.conf
-
-EXPOSE	443
-
-CMD	[ "nginx", "-g", "daemon off;" ]
+# copy the provided config file to the container
+RUN mkdir -p /var/run/nginx
+COPY ./conf/nginx.conf /etc/nginx/nginx.conf    
+RUN mkdir /var/www/wordpress
+RUN chmod 755 /var/www/wordpress
+RUN chown -R www-data:www-data /var/www/wordpress
+CMD ["nginx", "-g", "daemon off;"]
