@@ -11,21 +11,18 @@ until mariadb -u root -p"${SQL_ROOT_PASSWORD}" -e "SELECT 1" &>/dev/null; do
   sleep 1
 done
 
-# Secure the initial root access and remove default databases
-mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" <<EOF
-ALTER USER 'root'@'localhost' IDENTIFIED BY '${SQL_ROOT_PASSWORD}';
-DELETE FROM mysql.user WHERE User='';
-DROP DATABASE IF EXISTS test;
-FLUSH PRIVILEGES;
-EOF
+# Sécurisation de l'accès root et suppression des bases par défaut
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${SQL_ROOT_PASSWORD}';"
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" -e "DELETE FROM mysql.user WHERE User='';"
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS test;"
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
 
-# Create a new database and user, use env credentials
-mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" <<EOF
-CREATE DATABASE IF NOT EXISTS ${SQL_DATABASE};
-CREATE USER IF NOT EXISTS '${SQL_USER}'@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';
-GRANT ALL PRIVILEGES ON ${SQL_DATABASE}.* TO '${SQL_USER}' IDENTIFIED BY '${SQL_PASSWORD}';
-FLUSH PRIVILEGES;
-EOF
+# Création d'une nouvelle base de données et d'un utilisateur
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${SQL_DATABASE};"
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS '${SQL_USER}'@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';"
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON ${SQL_DATABASE}.* TO '${SQL_USER}' IDENTIFIED BY '${SQL_PASSWORD}';"
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+
 
 # Shutdown and restart with your specified configuration
 mysqladmin -u root -p"${SQL_ROOT_PASSWORD}" shutdown
