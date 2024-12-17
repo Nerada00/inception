@@ -14,7 +14,7 @@ RUN openssl req -x509 -nodes -out /etc/nginx/ssl/inception.crt -keyout /etc/ngin
 # copy the provided config file to the container
 RUN mkdir -p /var/run/nginx
 COPY ./conf/nginx.conf /etc/nginx/nginx.conf    
-RUN mkdir /var/www/wordpress
-RUN chmod 755 /var/www/wordpress
-RUN chown -R www-data:www-data /var/www/wordpress
+RUN mkdir /var/www/wp
+RUN chmod 755 /var/www/wp
+RUN chown -R www-data:www-data /var/www/wp
 CMD ["nginx", "-g", "daemon off;"]

@@ -38,45 +38,27 @@
 
 # go into dir where wordpress installed, set permissions (write only by owner, read/execute by all)
 # change ownership of all files in wordpress dir to www-data (user associated with NGINX)
-cd /var/www/wordpress
-chmod -R 755 /var/www/wordpress/
-chown -R www-data:www-data /var/www/wordpress
+sleep 5
+cd /var/www/wp
+chmod -R 755 /var/www/wp/
+chown -R www-data:www-data /var/www/wp
 
 echo "...Installing WordPress..."
 # delete any existing files in wordpress dir
-find /var/www/wordpress/ -mindepth 1 -delete
+find /var/www/wp/ -mindepth 1 -delete
 
 # download latest version and make sure download is finished before next cmds
-wp core download --allow-root --path="/var/www/wordpress"
+wp core download --allow-root --path="/var/www/wp"
 
 # ensure mariadb is running before continuing
-sleep 5
+sleep 10
 
 # configures wordpress to connect to mariadb database
-wp core config 
-	--dbhost=mariadb:3306 \
-	--dbname="$SQL_DATABASE" \
-	--dbuser="$SQL_USER" \
-	--dbpass="$SQL_PASSWORD" \ 
-	--allow-root \
-	--path="/var/www/wordpress"
-
+wp core config --dbhost=mariadb:3306 --dbname="$SQL_DATABASE" --dbuser="$SQL_USER" --dbpass="$SQL_PASSWORD" --allow-root --path="/var/www/wp"
 # installs wordpress with specified site parameters
-wp core install 
-	--url="$DOMAIN_NAME" \
-	--title="$SITE_TITLE" \
-	--admin_user="$ADMIN_USER" \ 
-	--admin_password="$ADMIN_PASSWORD" \
-	--admin_email="$ADMIN_EMAIL" \
-	--allow-root \
-	--path="/var/www/wordpress"
+wp core install --url="$DOMAIN_NAME" --title="$SITE_TITLE" --admin_user="$ADMIN_USER" --admin_password="$ADMIN_PASSWORD" --admin_email="$ADMIN_EMAIL" --allow-root --path="/var/www/wp"
 # create new user as author with env varuables
-wp user create 
-	"$USER1_LOGIN" "$USER1_MAIL" \
-	--user_pass="$USER1_PASS" \
-	--role=author \
-	--allow-root \
-	--path="/var/www/wordpress"
+wp user create "$USER1_LOGIN" "$USER1_MAIL" --user_pass="$USER1_PASS" --role=author --allow-root --path="/var/www/wp"
 
 # ensure any cached data is cleared to avoid conflicts
 wp cache flush --allow-root

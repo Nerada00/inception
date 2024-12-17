@@ -12,26 +12,25 @@ until mariadb -u root -p"${SQL_ROOT_PASSWORD}" -e "SELECT 1" &>/dev/null; do
 done
 
 # Secure the initial root access and remove default databases
-mariadb -u root -p"${SQL_ROOT_PASSWORD}" -e "
-  ALTER USER 'root'@'localhost' IDENTIFIED BY '${SQL_ROOT_PASSWORD}';
-  DELETE FROM mysql.user WHERE User='';
-  DROP DATABASE IF EXISTS test;
-  FLUSH PRIVILEGES;
-"
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" <<EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${SQL_ROOT_PASSWORD}';
+DELETE FROM mysql.user WHERE User='';
+DROP DATABASE IF EXISTS test;
+FLUSH PRIVILEGES;
+EOF
 
 # Create a new database and user, use env credentials
-mariadb -u root -p"${SQL_ROOT_PASSWORD}" -e "
-  CREATE DATABASE IF NOT EXISTS ${SQL_DATABASE};
-  CREATE USER IF NOT EXISTS '${SQL_USER}'@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';
-  GRANT ALL PRIVILEGES ON ${SQL_DATABASE}.* TO '${SQL_USER}'@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';
-  FLUSH PRIVILEGES;
-"
+mariadb -h localhost -u root -p"${SQL_ROOT_PASSWORD}" <<EOF
+CREATE DATABASE IF NOT EXISTS ${SQL_DATABASE};
+CREATE USER IF NOT EXISTS '${SQL_USER}'@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${SQL_DATABASE}.* TO '${SQL_USER}' IDENTIFIED BY '${SQL_PASSWORD}';
+FLUSH PRIVILEGES;
+EOF
 
-# Shutdown and restart MariaDB with your specified configuration
+# Shutdown and restart with your specified configuration
 mysqladmin -u root -p"${SQL_ROOT_PASSWORD}" shutdown
-mysqld_safe --user=mysql --port=3306 --bind-address=0.0.0.0 --socket='/run/mysqld/mysqld.sock' --datadir='/var/lib/mysql' --pid-file='/var/run/mysqld/mysqld.pid' --skip-networking=off --max_allowed_packet=64M
+mysqld_safe --user=mysql --port=3306 --bind-address=0.0.0.0  --socket='/run/mysqld/mysqld.sock' --datadir='/var/lib/mysql' --pid-file='/var/run/mysqld/mysqld.pid' --skip-networking=off --max_allowed_packet=64M #--log-error='/var/log/mysql/error.log'
 
-echo "MariaDB database and user were created successfully!"
 # mariadb -e "CREATE DATABASE IF NOT EXISTS \`abdel\`;"
 # mariadb -e "CREATE USER IF NOT EXISTS \`${SQL_USER}\`@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';"
 # mariadb -e "GRANT ALL PRIVILEGES ON \`${SQL_DATABASE}\`.* TO \`${SQL_USER}\`@'%' IDENTIFIED BY '${SQL_PASSWORD}';"
@@ -43,3 +42,4 @@ echo "MariaDB database and user were created successfully!"
 # # exec mysqld_safe
 # mysqld_safe --port=3306 --bind-address=0.0.0.0 --socket='/run/mysqld/mysqld.sock' --user=mysql --datadir='/var/lib/mysql'
 # #print status
+echo "MariaDB database and user were created successfully! "

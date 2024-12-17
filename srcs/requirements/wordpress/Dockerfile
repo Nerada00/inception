@@ -11,4 +11,4 @@ RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.ph
 COPY /tools/wpscript.sh /
 RUN  chmod +x wpscript.sh
 
-ENTRYPOINT ["bash", "./wpscript.sh"]
+ENTRYPOINT ["bash" , "./wpscript.sh"]
